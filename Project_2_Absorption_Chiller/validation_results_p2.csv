@@ -1,0 +1,23 @@
+Check,Quantity,Hand Value,Code Output,Difference,Tolerance,Status
+Check 1: Psychrometrics,Check 1: Room Pv (kPa),1.9840,1.9840,0.000%,<= 0.5 %,PASS
+Check 1: Psychrometrics,Check 1: Room w (kg/kg da),0.0124,0.0124,0.019%,<= 0.5 %,PASS
+Check 1: Psychrometrics,Check 1: Room h (kJ/kg da),53.7100,53.7087,0.002%,<= 0.5 %,PASS
+Check 1: Psychrometrics,Check 1: Outdoor Pv (kPa),3.6920,3.6925,0.013%,<= 0.5 %,PASS
+Check 1: Psychrometrics,Check 1: Outdoor w (kg/kg da),0.0235,0.0235,0.017%,<= 0.5 %,PASS
+Check 1: Psychrometrics,Check 1: Outdoor h (kJ/kg da),100.8200,100.8239,0.004%,<= 0.5 %,PASS
+Check 1: Psychrometrics,Check 1: Mixed w (kg/kg da),0.0158,0.0158,0.018%,<= 0.5 %,PASS
+Check 1: Psychrometrics,Check 1: Mixed h (kJ/kg da),67.8400,67.8433,0.005%,<= 0.5 %,PASS
+Check 1: Psychrometrics,Check 1: Mixed T (deg C),27.4800,27.4754,0.005 K,<= 0.1 abs,PASS
+Check 1: Psychrometrics,Check 1: Twb Summer Day (deg C),30.3000,30.3045,0.005 K,<= 0.5 abs,PASS
+Check 1: Psychrometrics,Check 1: Twb Monsoon Day (deg C),32.6500,32.6484,0.002 K,<= 0.5 abs,PASS
+Check 2: Ammonia EOS,Check 2: Psat(0 C) (kPa),429.6,424.64,-1.15%,"[424.0, 430.0]",PASS
+Check 2: Ammonia EOS,Check 2: hfg(0 C) (kJ/kg),1261.8,1297.45,+2.83%,"[1260.0, 1300.0]",PASS
+Check 2: Ammonia EOS,Check 2: Psat(40 C) (kPa),1554.9,1564.00,+0.58%,"[1550.0, 1570.0]",PASS
+Check 2: Ammonia EOS,Check 2: hfg(40 C) (kJ/kg),1098.8,1144.95,+4.20%,"[1090.0, 1150.0]",PASS
+Check 2: Ammonia EOS,Check 2: qe Refrig Effect (kJ/kg),1075.0,1098.64,+2.20%,"[1050.0, 1100.0]",PASS
+Check 2: Ammonia EOS,Check 2: m_r for 5000 kW (kg/s),4.7,4.55,-2.13%,"[4.5, 4.8]",PASS
+Check 3: Cycle Balances,Check 3: First Law Residual (kW),0.000,0.000,0.00000,<= 0.05,PASS
+Check 3: Cycle Balances,Check 3: Species Mass Balance Err (kg/s),0.000,0.000,0.00000,<= 0.0001,PASS
+Check 3: Cycle Balances,Check 3: Reversible COP Bound,1.349,1.349,0.010%,<= 0.5%,PASS
+Check 3: Cycle Balances,Check 3: Machine Actual COP,0.550,0.531,0.531,"[0.45, 0.65]",PASS
+Check 3: Cycle Balances,Check 3: COP < COP_rev Constraint,1.000,1.000,TRUE,TRUE,PASS

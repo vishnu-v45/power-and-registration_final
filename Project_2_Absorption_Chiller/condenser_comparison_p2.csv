@@ -1,0 +1,12 @@
+Parameter,Evaporative Condenser,Air-Cooled Finned-Tube
+Governing Condition,Monsoon Day (Twb = 32.65 °C),Summer Day (Tdb = 40.0 °C)
+Condensing Temperature T_cond (°C),40.00,52.00
+Condensing Pressure P_high (bar),15.64,21.54
+P_high <= 20 bar Vessel Limit,PASS (15.6 bar < 20 bar),VIOLATED (21.6 bar > 20 bar)
+Heat Rejection Q_cond (kW),11356.4,10990.1
+Overall Heat Transfer Coeff U (W/m²·K),600,30
+Required UA (kW/K),2188.5,1509.2
+Heat Transfer Area A (m²),3647.5,50307.6
+Area Ratio (Air-Cooled / Evaporative),1.0x (Baseline),13.8x larger
+Makeup Water / Air Flow Rate,545.1 m³/day makeup water,1365.6 kg/s air flow
+Engineering Recommendation,"RECOMMENDED (Safe pressure, 18x smaller area)",REJECTED (Violates 20 bar vessel limit)
