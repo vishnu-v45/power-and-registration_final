@@ -14,7 +14,7 @@ from scipy.optimize import root_scalar
 SPECIES_DATA = {
     'N2': {
         'M': 28.013,
-        'C': [28.90, -0.1571, 8.081, -2.873],
+        'C': [28.90, -1.571, 8.081, -2.873],
         'href': 0.0,
     },
     'O2': {

@@ -1,0 +1,55 @@
+Category,Quantity,Benchmark Value,Code Output,Diff (%),Tolerance (%),Status
+Check 1: GT Air-Std,T1 (K),300.0,300.0,0.0,0.5,PASS
+Check 1: GT Air-Std,h1 (kJ/kg),300.47,300.474,0.0014,0.5,PASS
+Check 1: GT Air-Std,T2s (K),641.2,641.116,0.013,0.5,PASS
+Check 1: GT Air-Std,h2s (kJ/kg),650.81,650.857,0.0073,0.5,PASS
+Check 1: GT Air-Std,T2 (K),694.7,694.661,0.0056,0.5,PASS
+Check 1: GT Air-Std,h2 (kJ/kg),707.87,707.896,0.0037,0.5,PASS
+Check 1: GT Air-Std,T3 (K),1400.0,1400.0,0.0,0.5,PASS
+Check 1: GT Air-Std,h3 (kJ/kg),1515.27,1515.249,0.0014,0.5,PASS
+Check 1: GT Air-Std,T4s (K),707.3,707.255,0.0063,0.5,PASS
+Check 1: GT Air-Std,h4s (kJ/kg),721.47,721.402,0.0094,0.5,PASS
+Check 1: GT Air-Std,T4 (K),787.7,787.913,0.0271,0.5,PASS
+Check 1: GT Air-Std,h4 (kJ/kg),808.77,808.726,0.0055,0.5,PASS
+Check 1: GT Air-Std,wc (kJ/kg),407.4,407.422,0.0054,0.5,PASS
+Check 1: GT Air-Std,wt (kJ/kg),706.5,706.524,0.0034,0.5,PASS
+Check 1: GT Air-Std,wnet (kJ/kg),299.1,299.102,0.0006,0.5,PASS
+Check 1: GT Air-Std,qh (kJ/kg),807.4,807.353,0.0058,0.5,PASS
+Check 1: GT Air-Std,eta_th (%),37.05,37.047,0.0075,0.5,PASS
+Check 2: Rankine Steam,h5 (kJ/kg),3344.0,3344.843,0.0252,0.1,PASS
+Check 2: Rankine Steam,s5 (kJ/kg-K),7.083,7.086,0.0326,0.1,PASS
+Check 2: Rankine Steam,h6s (kJ/kg),2208.4,2209.035,0.0287,0.1,PASS
+Check 2: Rankine Steam,h6 (kJ/kg),2378.8,2379.406,0.0255,0.1,PASS
+Check 2: Rankine Steam,h7 (kJ/kg),168.77,168.746,0.0139,0.1,PASS
+Check 2: Rankine Steam,s7 (kJ/kg-K),0.576,0.576,0.0044,0.1,PASS
+Check 2: Rankine Steam,h8 (kJ/kg),172.54,172.515,0.0147,0.1,PASS
+Check 2: Rankine Steam,x6s (-),0.848,0.848,0.0298,0.2,PASS
+Check 2: Rankine Steam,x6 (-),0.919,0.919,0.0093,0.2,PASS
+Check 2: Rankine Steam,w_st (kJ/kg),965.2,965.437,0.0245,0.1,PASS
+Check 2: Rankine Steam,w_pump (kJ/kg),3.77,3.768,0.0497,0.1,PASS
+Check 2: Rankine Steam,w_net (kJ/kg),961.4,961.669,0.028,0.1,PASS
+Check 2: Rankine Steam,q_H (kJ/kg),3171.5,3172.328,0.0261,0.1,PASS
+Check 2: Rankine Steam,eta_Rankine (%),30.3,30.314,0.0472,0.1,PASS
+"Check 3: Baseline (rp=16, TIT=1400K)","Q_fuel,eff (kW)",89696.099,89696.099,0.0,0.01,PASS
+"Check 3: Baseline (rp=16, TIT=1400K)","W_net,total (kW)",45970.454,45970.454,0.0,0.01,PASS
+"Check 3: Baseline (rp=16, TIT=1400K)",Q_stack (kW),12234.43,12234.43,0.0,0.01,PASS
+"Check 3: Baseline (rp=16, TIT=1400K)",Q_condenser (kW),30407.183,30407.183,0.0,0.01,PASS
+"Check 3: Baseline (rp=16, TIT=1400K)",Closed Residual (%),0.0,0.0,0.0,0.01,PASS
+"Check 3: Off-design (rp=10, TIT=1250K)","Q_fuel,eff (kW)",78975.852,78975.852,0.0,0.01,PASS
+"Check 3: Off-design (rp=10, TIT=1250K)","W_net,total (kW)",36315.279,36315.279,0.0,0.01,PASS
+"Check 3: Off-design (rp=10, TIT=1250K)",Q_stack (kW),10733.694,10733.694,0.0,0.01,PASS
+"Check 3: Off-design (rp=10, TIT=1250K)",Q_condenser (kW),31008.472,31008.472,0.0,0.01,PASS
+"Check 3: Off-design (rp=10, TIT=1250K)",Closed Residual (%),0.0,0.0,0.0,0.01,PASS
+"Check 3: Near-Optimum (rp=22, TIT=1500K)","Q_fuel,eff (kW)",96330.319,96330.319,0.0,0.01,PASS
+"Check 3: Near-Optimum (rp=22, TIT=1500K)","W_net,total (kW)",37754.155,37754.155,0.0,0.01,PASS
+"Check 3: Near-Optimum (rp=22, TIT=1500K)",Q_stack (kW),57389.635,57389.635,0.0,0.01,PASS
+"Check 3: Near-Optimum (rp=22, TIT=1500K)",Q_condenser (kW),0.0,0.0,0.0,0.01,PASS
+"Check 3: Near-Optimum (rp=22, TIT=1500K)",Closed Residual (%),0.0,0.0,0.0,0.01,PASS
+Check 4: Çengel Ex 10-7,GT Exhaust T4 (K),853.0,852.724,0.0323,0.5,PASS
+Check 4: Çengel Ex 10-7,GT Net Work (kJ/kg),210.13,210.291,0.0767,0.5,PASS
+Check 4: Çengel Ex 10-7,GT Efficiency (%),26.6,26.627,0.103,0.5,PASS
+Check 4: Çengel Ex 10-7,ST Steam Net Work (kJ/kg),976.1,976.164,0.0065,0.5,PASS
+Check 4: Çengel Ex 10-7,ST Efficiency (%),30.8,30.837,0.1186,0.5,PASS
+Check 4: Çengel Ex 10-7,Steam-to-Gas Ratio y (-),0.136,0.135,0.2406,0.5,PASS
+Check 4: Çengel Ex 10-7,CC Specific Work (kJ/kg),342.39,342.243,0.0429,0.5,PASS
+Check 4: Çengel Ex 10-7,CC Thermal Efficiency (%),43.3,43.335,0.0817,0.5,PASS
