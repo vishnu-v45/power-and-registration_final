@@ -19,5 +19,5 @@ Check 2: Ammonia EOS,Check 2: m_r for 5000 kW (kg/s),4.7,4.55,-2.13%,"[4.5, 4.8]
 Check 3: Cycle Balances,Check 3: First Law Residual (kW),0.000,0.000,0.00000,<= 0.05,PASS
 Check 3: Cycle Balances,Check 3: Species Mass Balance Err (kg/s),0.000,0.000,0.00000,<= 0.0001,PASS
 Check 3: Cycle Balances,Check 3: Reversible COP Bound,1.349,1.349,0.010%,<= 0.5%,PASS
-Check 3: Cycle Balances,Check 3: Machine Actual COP,0.550,0.531,0.531,"[0.45, 0.65]",PASS
+Check 3: Cycle Balances,Check 3: Machine Actual COP,0.550,0.567,0.567,"[0.45, 0.65]",PASS
 Check 3: Cycle Balances,Check 3: COP < COP_rev Constraint,1.000,1.000,TRUE,TRUE,PASS

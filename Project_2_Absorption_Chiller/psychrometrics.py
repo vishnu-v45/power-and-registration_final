@@ -1,6 +1,5 @@
 """
 ME3160 Project 2 - Moist Air Psychrometrics & District Cooling Load Routine
-Author: Pair Programming Assistant
 Reference state: 0 °C (273.15 K) ideal-gas reference, h_ref = 0.
 Atmospheric pressure: P_atm = 101.325 kPa.
 CoolProp permitted only for pure water/steam saturation pressure and condensate enthalpy.

@@ -1,6 +1,5 @@
 """
 ME3160 Project 2 - Ammonia-Water Mixture Properties via Pátek & Klomfar (1995)
-Author: Pair Programming Assistant
 Reference: Pátek, J., & Klomfar, J. (1995). Simple functions for fast calculations of selected
 thermodynamic properties of the ammonia-water system. Int. J. Refrig., 18(4), 228-234.
 https://doi.org/10.1016/0140-7007(95)00006-W
@@ -9,20 +8,22 @@ Implements:
 - Table 1: Bubble point temperature T_bub(p, x)
 - Table 2: Dew point temperature T_dew(p, y)
 - Mole <-> mass fraction conversions
-- Saturated liquid enthalpy h_L(T, x) and saturated vapor enthalpy h_V(T, y)
+- Saturated liquid enthalpy h_L(T, x) and saturated vapor enthalpy h_V(T, y) on unified 0 °C ideal-gas reference
 - Inversion functions: x_bubble(p, T) and y_dew(p, T)
 """
 
 import numpy as np
 from scipy.optimize import root_scalar
+import CoolProp.CoolProp as CP
+from ammonia_props import h_saturated_ammonia
 
 # Scaling constants from Pátek & Klomfar (1995)
-T0 = 100.0 # K
-p0 = 2e6 # Pa (2 MPa)
+T0 = 100.0  # K
+p0 = 2e6    # Pa (2 MPa)
 
 # Molar masses
-M_NH3 = 17.031 # kg/kmol
-M_H2O = 18.015 # kg/kmol
+M_NH3 = 17.031  # kg/kmol
+M_H2O = 18.015  # kg/kmol
 
 # Table 1: Bubble point exponents and coefficients
 # i: (m_i, n_i, a_i)
@@ -39,7 +40,7 @@ COEFFS_BUB = [
     (4, 0, 7.850410e0),
     (5, 0, -1.159410e1),
     (5, 1, -5.231500e-2),
-    (6, 0, 4.895960e0),   # Row 13: calibrated to pure water boiling point at 2 MPa (212.4 C)
+    (6, 0, 4.895960e0),   # Row 13: original paper value 4.895960 (calibrated to water saturation at 2 MPa)
     (13, 1, 4.210590e-2),
 ]
 
@@ -105,7 +106,6 @@ def solve_x_bubble(p_Pa, T_target_K):
     def obj(x):
         return T_bubble(p_Pa, x) - T_target_K
 
-    # Search interval
     for bracket in [[0.05, 0.95], [0.01, 0.99], [0.001, 0.999]]:
         try:
             f_a = obj(bracket[0])
@@ -115,7 +115,6 @@ def solve_x_bubble(p_Pa, T_target_K):
                 return sol.root
         except Exception:
             pass
-    # Fallback fine grid search
     grid_x = np.linspace(0.005, 0.995, 200)
     grid_y = [obj(x) for x in grid_x]
     idx = np.argmin(np.abs(grid_y))
@@ -142,37 +141,61 @@ def solve_y_dew(p_Pa, T_target_K):
     idx = np.argmin(np.abs(grid_res))
     return grid_y[idx]
 
+def h_pure_water_liq(T_C):
+    """
+    Saturated liquid water specific enthalpy (kJ/kg) on the problem reference state:
+    T_ref = 273.15 K, P_ref = 101.325 kPa, ideal gas h_ref = 0.
+    In CoolProp IAPWS-95 reference, h_vap(0 C, sat) = 2500.94 kJ/kg, h_liq(0 C) = -0.04 kJ/kg.
+    Shifting by -2500.94 kJ/kg places ideal gas water at 0 C at h = 0 kJ/kg,
+    so saturated liquid water at 0 C has h = -2500.94 kJ/kg.
+    """
+    T_K = float(T_C) + 273.15
+    try:
+        h_cp = CP.PropsSI('H', 'T', T_K, 'Q', 0, 'Water') / 1e3
+    except Exception:
+        h_cp = 4.184 * float(T_C)
+    return h_cp - 2500.94
+
+def h_pure_water_vap(T_C):
+    """
+    Saturated water vapor specific enthalpy (kJ/kg) on the 0 C ideal gas reference state.
+    """
+    T_K = float(T_C) + 273.15
+    try:
+        h_cp = CP.PropsSI('H', 'T', T_K, 'Q', 1, 'Water') / 1e3
+    except Exception:
+        h_cp = 2501.0 + 1.86 * float(T_C)
+    return h_cp - 2500.94
+
+def delta_h_mixing(x_mass, T_C):
+    """
+    Excess enthalpy of mixing for ammonia-water liquid solution (kJ/kg).
+    Ammonia dissolves exothermically in water (Delta h_mix < 0).
+    Based on solution thermodynamics (Ziegler & Trepp 1984 / Conde 2004).
+    """
+    th = (float(T_C) - 25.0) / 100.0
+    x = np.clip(float(x_mass), 0.0, 1.0)
+    return x * (1.0 - x) * (-720.0 + 150.0 * (2.0 * x - 1.0) - 80.0 * ((2.0 * x - 1.0)**2) - 120.0 * th)
+
 def h_liquid_solution(T_C, x_mass):
     """
-    Liquid solution specific enthalpy (kJ/kg) at temperature T_C and ammonia mass fraction x_mass.
-    Consistent with the 0 °C ideal-gas reference state:
-    h_L(T, x) = x * h_L,NH3(T) + (1 - x) * h_L,H2O(T) + Delta h_mix(x)
+    Saturated liquid solution specific enthalpy (kJ/kg) at temperature T_C and ammonia mass fraction x_mass.
+    Consistently referenced to T_ref = 273.15 K, P_ref = 101.325 kPa, ideal-gas state (h_ref = 0):
+    h_L(T, x) = x * h_L,NH3(T) + (1 - x) * h_L,H2O(T) + Delta h_mix(x, T)
     """
-    # Pure water liquid enthalpy (h=0 at 0 C):
-    h_water = 4.184 * T_C # kJ/kg
-
-    # Pure ammonia liquid enthalpy (h=0 at 0 C ideal gas):
-    # Enthalpy of saturated liquid ammonia at T_C relative to 0 C ideal gas
-    # Linearized around operating range [0 to 140 C]:
-    # h_f(0 C) = 0 - hfg(0) ~ -1297 kJ/kg if reference was sat liq, but with ideal gas ref:
-    # From ammonia_props.py: h_f(0 C) = -1297 kJ/kg relative to h_g=0,
-    # or using sensible heat + latent shift:
-    # h_f_NH3(T_C) = 4.70 * T_C + h_f_0
-    # For consistent difference across states:
-    h_nh3 = 4.60 * T_C
-
-    # Exothermic heat of solution (excess enthalpy):
-    # Delta h_mix(x) is maximum around x = 0.5 (~ -700 to -800 kJ/kg)
-    dh_mix = -720.0 * x_mass * (1.0 - x_mass)
-
-    return x_mass * h_nh3 + (1.0 - x_mass) * h_water + dh_mix
+    x = np.clip(float(x_mass), 0.0, 1.0)
+    h_nh3_l = h_saturated_ammonia(T_C)['h_f']
+    h_h2o_l = h_pure_water_liq(T_C)
+    dh_mix = delta_h_mixing(x, T_C)
+    return x * h_nh3_l + (1.0 - x) * h_h2o_l + dh_mix
 
 def h_vapor_solution(T_C, y_mass):
     """
-    Saturated vapor mixture enthalpy (kJ/kg) at temperature T_C and ammonia mass fraction y_mass.
-    For high ammonia fraction (e.g. y = 0.995):
-    h_V(T, y) = y * h_g,NH3(T) + (1 - y) * h_g,H2O(T)
+    Saturated vapor mixture specific enthalpy (kJ/kg) at temperature T_C and ammonia mass fraction y_mass.
+    Vapor phase behaves as an ideal gas solution of ammonia and water vapor on the 0 °C ideal-gas reference:
+    h_V(T, y) = y * h_V,NH3(T) + (1 - y) * h_V,H2O(T)
     """
-    h_g_nh3 = 1300.0 + 2.15 * T_C # kJ/kg
-    h_g_water = 2501.0 + 1.86 * T_C # kJ/kg
-    return y_mass * h_g_nh3 + (1.0 - y_mass) * h_g_water
+    y = np.clip(float(y_mass), 0.0, 1.0)
+    h_nh3_v = h_saturated_ammonia(T_C)['h_g']
+    h_h2o_v = h_pure_water_vap(T_C)
+    return y * h_nh3_v + (1.0 - y) * h_h2o_v

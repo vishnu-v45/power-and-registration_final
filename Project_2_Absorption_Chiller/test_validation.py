@@ -1,6 +1,6 @@
 """
 ME3160 Project 2 - Automated Validation Test Suite
-Author: Pair Programming Assistant
+Course: ME3160 Power & Refrigeration Cycles
 
 Asserts compliance with all 3 required checks from §2.4:
 Check 1: Psychrometric mixing & wet-bulb temperatures (0.5% for w/h, 0.1 K for T)

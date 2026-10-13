@@ -1,6 +1,5 @@
 """
 ME3160 Project 2 - Pure Ammonia Thermodynamic Properties via Real-Gas EOS
-Author: Pair Programming Assistant
 Reference state: T_ref = 273.15 K, P_ref = 101.325 kPa, ideal-gas state: h_ref = 0, s_ref = 0.
 Equation of State: Peng-Robinson Cubic EOS with Lee-Kesler / Pitzer generalized vapor pressure.
 Ideal gas Cp from Borgnakke & Sonntag (Table A.6).

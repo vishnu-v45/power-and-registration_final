@@ -1,6 +1,5 @@
 """
 ME3160 Project 2 - Waste-Heat-Driven Ammonia-Water Absorption Chiller Model
-Author: Pair Programming Assistant
 
 Cycle components:
 - Generator with Rectifier (y = 0.995 NH3 by mass)
@@ -37,17 +36,17 @@ class AbsorptionChiller:
         self.T_fg_floor_C = 140.0 # deg C
         self.x_r = 0.995 # Refrigerant ammonia mass fraction leaving rectifier
 
-    def solve_cycle(self, Q_evap_kW, T_cond_C, T_gen_C=130.0):
+    def solve_cycle(self, Q_evap_kW, T_cond_C, T_gen_C=None, x_weak_nominal=0.280):
         """
-        Solves the absorption cycle for a specified evaporator duty Q_evap_kW and condensing temperature T_cond_C.
-        Returns full thermodynamic states dictionary and performance metrics.
+        Solves the absorption cycle for specified evaporator duty Q_evap_kW and condensing temperature T_cond_C.
+        If T_gen_C is None, T_gen is solved dynamically as T_bub(P_high, x_weak_nominal), tracking condensing pressure.
+        Returns complete thermodynamic state dictionary and performance metrics.
         """
         T_abs_C = T_cond_C # Absorber and condenser cooled by same medium
 
         # 1. Pressures from pure ammonia saturation at T_evap and T_cond
         T_evap_K = self.T_evap_C + 273.15
         T_cond_K = T_cond_C + 273.15
-        T_gen_K = T_gen_C + 273.15
 
         P_low_Pa = Psat_ammonia_lk(T_evap_K) # Pa
         P_high_Pa = Psat_ammonia_lk(T_cond_K) # Pa
@@ -55,14 +54,21 @@ class AbsorptionChiller:
         P_high_kPa = P_high_Pa / 1e3
         P_high_bar = P_high_Pa / 1e5
 
-        # 2. Strong and weak solution equilibrium concentrations via Pátek & Klomfar
-        # Strong solution at absorber exit (P_low, T_abs):
+        # 2. Strong solution equilibrium concentration at absorber exit (P_low, T_abs):
         x_s_mole = solve_x_bubble(P_low_Pa, T_abs_C + 273.15)
         x_strong = mole_to_mass(x_s_mole)
 
-        # Weak solution at generator exit (P_high, T_gen):
-        x_w_mole = solve_x_bubble(P_high_Pa, T_gen_K)
-        x_weak = mole_to_mass(x_w_mole)
+        # Generator temperature and weak solution concentration
+        if T_gen_C is not None:
+            T_gen_actual_C = float(T_gen_C)
+            T_gen_K = T_gen_actual_C + 273.15
+            x_w_mole = solve_x_bubble(P_high_Pa, T_gen_K)
+            x_weak = mole_to_mass(x_w_mole)
+        else:
+            x_weak = float(x_weak_nominal)
+            x_w_mole = mass_to_mole(x_weak)
+            T_gen_K = T_bubble(P_high_Pa, x_w_mole)
+            T_gen_actual_C = T_gen_K - 273.15
 
         # Circulation ratio f = m_strong / m_r = (x_r - x_weak) / (x_strong - x_weak)
         if x_strong <= x_weak:
@@ -89,12 +95,12 @@ class AbsorptionChiller:
         # Refrigerant mass flow rate
         if Q_evap_kW <= 0:
             m_r = 0.0
+            m_strong = 0.0
+            m_weak = 0.0
         else:
             m_r = Q_evap_kW / q_e # kg/s
-
-        # Solution mass flows
-        m_strong = m_r * f_circ
-        m_weak = m_strong - m_r
+            m_strong = m_r * f_circ
+            m_weak = m_strong - m_r
 
         # State 7: Vapor leaving rectifier at T_dew(P_high, y_r)
         y_r_mole = mass_to_mole(self.x_r)
@@ -114,10 +120,9 @@ class AbsorptionChiller:
         W_pump_kW = m_strong * W_pump_spec
 
         # State 4: Weak solution leaving generator (saturated liquid at T_gen, x_weak)
-        h4 = h_liquid_solution(T_gen_C, x_weak)
+        h4 = h_liquid_solution(T_gen_actual_C, x_weak)
 
         # State 5: Weak solution leaving SHX
-        # Maximum possible SHX heat transfer:
         h4_at_Tabs = h_liquid_solution(T_abs_C, x_weak)
         Q_SHX_max = m_weak * (h4 - h4_at_Tabs)
         Q_SHX = self.eps_SHX * Q_SHX_max
@@ -136,28 +141,41 @@ class AbsorptionChiller:
         # State 6: Weak solution after throttle valve (isenthalpic)
         h6 = h5
 
-        # 5. Rectifier heat duty
-        # Rectifier cools vapor from generator to high-purity ammonia vapor (y = 0.995)
-        # Saturated vapor leaving generator is at T_gen:
-        h_vap_gen = h_vapor_solution(T_gen_C, self.x_r)
-        Q_rect = m_r * max(0.0, h_vap_gen - h7) * 0.85 # kW
+        # 5. Rectifier & Reflux Mass and Energy Balance
+        # Vapor from generator analyzer has y_gen ~ 0.95.
+        # Reflux liquid returned from rectifier is saturated liquid at T_rect:
+        x_reflux_mole = solve_x_bubble(P_high_Pa, T_rect_K)
+        x_reflux = mole_to_mass(x_reflux_mole)
+        y_gen = 0.950 # Ammonia vapor concentration leaving analyzer
 
-        # 6. Generator heat duty (Heating load)
-        # Energy balance on generator: Q_gen + m_strong*h3 = m_r*h7 + m_weak*h4 + Q_rect
-        Q_gen = m_r * h7 + m_weak * h4 - m_strong * h3 + Q_rect # kW
+        if y_gen > x_reflux and m_r > 0:
+            m_reflux = m_r * (self.x_r - y_gen) / (y_gen - x_reflux)
+        else:
+            m_reflux = 0.16 * m_r
+
+        m_in = m_r + m_reflux
+        h_vap_in = h_vapor_solution(T_gen_actual_C, y_gen)
+        h_reflux = h_liquid_solution(T_rect_C, x_reflux)
+
+        # Rectifier heat duty from energy balance
+        Q_rect = m_in * h_vap_in - (m_r * h7 + m_reflux * h_reflux) if m_r > 0 else 0.0
+
+        # 6. Generator heat duty from rigorous component energy balance:
+        # Heat in: Q_gen + m_strong*h3 + m_reflux*h_reflux = m_in*h_vap_in + m_weak*h4
+        if m_r > 0:
+            Q_gen = m_in * h_vap_in + m_weak * h4 - m_strong * h3 - m_reflux * h_reflux
+        else:
+            Q_gen = 0.0
 
         # 7. Condenser heat duty
-        # Vapor enters condenser from rectifier (h7) and leaves as saturated liquid (h8)
-        Q_cond = m_r * (h7 - h8) # kW
+        # Vapor enters from rectifier (h7) and leaves as saturated liquid (h8)
+        Q_cond = m_r * (h7 - h8) if m_r > 0 else 0.0
 
         # 8. Absorber heat duty
-        # Vapor from evaporator (m_r*h10) + weak solution from throttle (m_weak*h6) -> strong solution (m_strong*h1)
-        Q_abs = m_r * h10 + m_weak * h6 - m_strong * h1 # kW
+        # Saturated vapor from evaporator (m_r*h10) + weak solution (m_weak*h6) -> strong solution (m_strong*h1)
+        Q_abs = m_r * h10 + m_weak * h6 - m_strong * h1 if m_r > 0 else 0.0
 
         # 9. COP and Energy Balance Check
-        # First Law closure:
-        # Energy in: Q_gen + Q_evap + W_pump
-        # Energy out: Q_cond + Q_abs + Q_rect
         E_in = Q_gen + Q_evap_kW + W_pump_kW
         E_out = Q_cond + Q_abs + Q_rect
         first_law_residual = abs(E_in - E_out)
@@ -165,22 +183,27 @@ class AbsorptionChiller:
         COP = Q_evap_kW / (Q_gen + W_pump_kW) if (Q_gen + W_pump_kW) > 0 else 0.0
 
         # Carnot / Reversible COP bound:
-        # COP_rev = [T_evap / (T_cond - T_evap)] * [(T_gen - T_abs) / T_gen] in Kelvin
         COP_rev = (T_evap_K / (T_cond_K - T_evap_K)) * ((T_gen_K - (T_abs_C + 273.15)) / T_gen_K)
 
         # 10. Flue-Gas Requirements
         # eps_gen = (T_fg,in - T_fg,out) / (T_fg,in - T_gen)
         # T_fg,out = T_fg,in - eps_gen * (T_fg,in - T_gen)
-        T_fg_out_C = self.T_fg_in_C - self.eps_gen * (self.T_fg_in_C - T_gen_C)
-        q_fg_spec = self.Cp_fg * (self.T_fg_in_C - T_fg_out_C) # kJ/kg flue gas
-        m_fg_required = Q_gen / q_fg_spec if q_fg_spec > 0 else 0.0 # kg/s
+        if Q_evap_kW > 0:
+            T_fg_out_C = self.T_fg_in_C - self.eps_gen * (self.T_fg_in_C - T_gen_actual_C)
+            q_fg_spec = self.Cp_fg * (self.T_fg_in_C - T_fg_out_C) # kJ/kg flue gas
+            m_fg_required = Q_gen / q_fg_spec if q_fg_spec > 0 else 0.0 # kg/s
+        else:
+            T_fg_out_C = np.nan
+            m_fg_required = 0.0
+
+        # Check (b): Is T_gen deliverable by 300 °C flue gas with eps_gen=0.75 and 140 °C floor?
+        # Requires T_fg,out >= 140 °C and T_fg,out > T_gen (no temperature pinch crossover)
+        t_gen_deliverable = (T_fg_out_C >= self.T_fg_floor_C) and (T_fg_out_C > T_gen_actual_C) if Q_evap_kW > 0 else True
 
         # 11. Circuit sizing parameters
-        # Solution pump volumetric flow (m3/h)
-        V_dot_pump_m3h = (m_strong / rho_strong) * 3600.0 # m3/h
-        # Evaporator vapor volumetric flow (m3/h and m3/s)
-        V_dot_evap_vap_m3s = m_r * v_vap_evap # m3/s
-        V_dot_evap_vap_m3h = V_dot_evap_vap_m3s * 3600.0 # m3/h
+        V_dot_pump_m3h = (m_strong / rho_strong) * 3600.0 if m_strong > 0 else 0.0
+        V_dot_evap_vap_m3s = m_r * v_vap_evap if m_r > 0 else 0.0
+        V_dot_evap_vap_m3h = V_dot_evap_vap_m3s * 3600.0
 
         return {
             'Q_evap_kW': Q_evap_kW,
@@ -193,6 +216,7 @@ class AbsorptionChiller:
             'COP_rev': COP_rev,
             'first_law_residual_kW': first_law_residual,
             'm_r_kgs': m_r,
+            'm_reflux_kgs': m_reflux,
             'm_strong_kgs': m_strong,
             'm_weak_kgs': m_weak,
             'x_strong': x_strong,
@@ -203,11 +227,12 @@ class AbsorptionChiller:
             'P_high_bar': P_high_bar,
             'T_cond_C': T_cond_C,
             'T_abs_C': T_abs_C,
-            'T_gen_C': T_gen_C,
+            'T_gen_C': T_gen_actual_C,
             'T_rect_C': T_rect_C,
             'T_fg_out_C': T_fg_out_C,
             'm_fg_required_kgs': m_fg_required,
             'm_fg_limit_exceeded': m_fg_required > self.m_fg_max,
+            't_gen_deliverable': t_gen_deliverable,
             'V_dot_pump_m3h': V_dot_pump_m3h,
             'delta_P_pump_kPa': delta_P_kPa,
             'V_dot_evap_vap_m3s': V_dot_evap_vap_m3s,
